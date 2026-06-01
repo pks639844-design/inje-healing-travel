@@ -459,6 +459,28 @@
   .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(120px);background:#0c1330;border:1px solid var(--line);color:#fff;padding:18px 28px;border-radius:16px;box-shadow:0 14px 34px rgba(0,0,0,.5);z-index:200;transition:transform .4s;max-width:90vw;text-align:center}
   .toast.show{transform:translateX(-50%) translateY(0)}
   .toast b{color:var(--gold-soft)}
+  /* 배경음악 토글 버튼 */
+  .bgm-btn{position:fixed;right:18px;bottom:18px;z-index:120;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);
+    background:rgba(12,19,48,.85);backdrop-filter:blur(8px);color:var(--gold-soft);font-size:20px;cursor:pointer;
+    box-shadow:0 8px 22px rgba(0,0,0,.45);display:grid;place-items:center;transition:transform .2s,background .2s,color .2s}
+  .bgm-btn:hover{transform:translateY(-2px);background:rgba(24,34,76,.95)}
+  .bgm-btn.playing{color:#8fe0a3}
+  @media(max-width:560px){.bgm-btn{right:14px;bottom:14px;width:44px;height:44px;font-size:18px}}
+  /* 작업중 안내 팝업 */
+  .work-overlay{position:fixed;inset:0;z-index:300;background:rgba(4,7,20,.72);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+  .work-overlay.show{opacity:1;visibility:visible}
+  .work-box{position:relative;max-width:380px;width:100%;background:linear-gradient(165deg,var(--surface),var(--bg-2));border:1px solid var(--line);border-radius:22px;
+    padding:34px 30px;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.6);transform:translateY(14px);transition:transform .3s}
+  .work-box .wm-close{position:absolute;top:12px;right:13px;width:32px;height:32px;padding:0;border:none;background:transparent;
+    color:var(--txt-3);font-size:20px;line-height:1;cursor:pointer;border-radius:9px;display:grid;place-items:center;transition:.2s}
+  .work-box .wm-close:hover{color:var(--txt);background:rgba(255,255,255,.1)}
+  .work-overlay.show .work-box{transform:translateY(0)}
+  .work-box .wm-ico{font-size:44px;margin-bottom:12px}
+  .work-box h3{font-family:'Gowun Batang',serif;font-size:23px;color:var(--txt);margin-bottom:10px}
+  .work-box p{font-size:14.5px;color:var(--txt-2);line-height:1.7;margin-bottom:22px}
+  .work-box button{background:var(--gold);color:#241803;border:none;padding:12px 28px;border-radius:30px;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;transition:.2s}
+  .work-box button:hover{background:#f0d28a}
   @media(max-width:760px){.res-grid{grid-template-columns:1fr;padding:24px}}
 
   /* ---------- FOOTER ---------- */
@@ -512,6 +534,17 @@
 </style>
 </head>
 <body>
+
+<!-- 작업중 안내 팝업 -->
+<div class="work-overlay" id="workModal">
+  <div class="work-box">
+    <button class="wm-close" onclick="closeWorkModal()" aria-label="닫기">✕</button>
+    <div class="wm-ico">🚧</div>
+    <h3>현재 웹페이지 작업중입니다</h3>
+    <p>더 멋진 인제힐링 트래블을 위해 페이지를 다듬고 있어요.<br>일부 내용은 준비 중일 수 있습니다.</p>
+    <button onclick="closeWorkModal()">둘러보기 →</button>
+  </div>
+</div>
 
 <!-- PROMO BAR -->
 <div class="promobar">🎖️ <b>군장병 면회 가족·연인 전용</b> 새벽 출발 — 이번 달 출발 오픈! <a href="#reserve">예약하기 →</a></div>
@@ -972,6 +1005,7 @@
 </footer>
 
 <div class="toast" id="toast"></div>
+<button class="bgm-btn" id="bgmBtn" aria-label="배경음악 켜기/끄기" title="배경음악">🎵</button>
 
 <script>
 /* ---------- DATA ---------- */
@@ -1394,6 +1428,56 @@ function closeMenu(){
 /* ---------- SCROLL REVEAL ---------- */
 const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ---------- BACKGROUND MUSIC (반복 + 페이드인/아웃) ---------- */
+(function(){
+  const btn=document.getElementById('bgmBtn');
+  const bgm=new Audio('Powdered%20Waltz%20-%20The%20Mini%20Vandals.mp3');     // 같은 폴더의 음악 파일
+  bgm.loop=true; bgm.preload='auto'; bgm.volume=0;
+  const TARGET=0.4, FADE=6;           // 목표 음량(0~1), 페이드 길이(초)
+  let on=false;
+
+  /* 매 프레임 currentTime에 따라 음량 조절: 앞부분=페이드인, 끝부분=페이드아웃 */
+  function tick(){
+    const d=bgm.duration;
+    if(on && d && !isNaN(d) && d>FADE*2){
+      const t=bgm.currentTime; let v;
+      if(t<FADE) v=t/FADE;             // 처음: 작게 → 서서히 커짐
+      else if(t>d-FADE) v=(d-t)/FADE;  // 마지막: 점점 작아짐
+      else v=1;
+      bgm.volume=Math.max(0,Math.min(1,v))*TARGET;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  function play(){bgm.play().then(()=>{on=true;btn.classList.add('playing');btn.textContent='🎵';}).catch(()=>{});}
+  function pause(){bgm.pause();on=false;btn.classList.remove('playing');btn.textContent='🔇';}
+
+  /* ① 페이지 진입 시 자동재생 시도 (브라우저가 허용하면 즉시 재생) */
+  window.addEventListener('load',()=>{ if(!on) play(); });
+  /* ② 팝업 닫기 등에서 호출 — 첫 사용자 동작 시 시작 */
+  window.startBGM=function(){ if(!on) play(); };
+  /* ③ 첫 클릭/스크롤 시 시작 (자동재생 차단 대비) */
+  const EVT=['pointerdown','keydown','scroll','touchstart'];
+  function onFirst(e){
+    if(e&&e.target===btn) return;      // 버튼 클릭은 버튼 핸들러가 처리
+    if(!on) play();
+    EVT.forEach(ev=>window.removeEventListener(ev,onFirst));
+  }
+  EVT.forEach(ev=>window.addEventListener(ev,onFirst,{passive:true}));
+
+  btn.addEventListener('click',()=>{ on?pause():play(); });
+})();
+
+/* ---------- 작업중 안내 팝업 ---------- */
+function closeWorkModal(){document.getElementById('workModal').classList.remove('show');if(window.startBGM)window.startBGM();}
+(function(){
+  const m=document.getElementById('workModal');
+  window.addEventListener('load',()=>setTimeout(()=>m.classList.add('show'),400));
+  m.addEventListener('click',e=>{if(e.target===m)closeWorkModal();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeWorkModal();});
+})();
 </script>
 </body>
 </html>
