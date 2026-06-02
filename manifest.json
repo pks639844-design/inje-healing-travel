@@ -1,0 +1,17 @@
+{
+  "name": "인제힐링 트래블",
+  "short_name": "인제힐링",
+  "description": "별, 바람, 반딧불이 — 낭만 인제 여행. 잠실·강남 얼리버드 새벽 출발.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080d22",
+  "theme_color": "#080d22",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
